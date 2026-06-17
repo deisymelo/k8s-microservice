@@ -1,5 +1,5 @@
 # Number of pod replicas to run by default.
-replicaCount: 2
+replicaCount: 3
 
 image:
   repository: k8s-microservice
