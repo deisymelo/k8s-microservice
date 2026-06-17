@@ -1,0 +1,63 @@
+name: CI/CD
+
+# Trigger: any push to main that touches the app, deps, Dockerfile, or this
+# workflow. We deliberately EXCLUDE chart/ so the pipeline's own commit-back
+# (which edits values.yaml) doesn't trigger an infinite loop.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app/**'
+      - 'requirements.txt'
+      - 'Dockerfile'
+      - '.github/workflows/ci-cd.yaml'
+
+permissions:
+  contents: write    # needed to commit the updated image tag back to the repo
+  packages: write    # needed to push the image to GHCR
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Compute a unique image tag (short git SHA) and a lowercase owner name.
+      - name: Set build variables
+        id: vars
+        run: |
+          echo "sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          echo "owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # CI: build the Docker image and push it, tagged with the commit SHA.
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ steps.vars.outputs.owner }}/k8s-microservice:${{ steps.vars.outputs.sha }}
+            ghcr.io/${{ steps.vars.outputs.owner }}/k8s-microservice:latest
+
+      # CD (GitOps): rewrite the image tag in the Helm values...
+      - name: Update Helm values with new image tag
+        run: |
+          sed -i -E "s|^( *tag: ).*|\1\"${{ steps.vars.outputs.sha }}\"|" chart/values.yaml
+
+      # ...and commit it back. ArgoCD watches the repo and will sync this change.
+      # [skip ci] + the path filter above prevent re-triggering the workflow.
+      - name: Commit updated values back to Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add chart/values.yaml
+          git commit -m "ci: bump image tag to ${{ steps.vars.outputs.sha }} [skip ci]" || echo "Nothing to commit"
+          git push
