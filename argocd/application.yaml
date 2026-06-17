@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: microservice
+  namespace: argocd               # the Application object lives in the argocd namespace
+spec:
+  project: default
+  # WHERE the desired state comes from: your Git repo + chart path.
+  source:
+    repoURL: https://github.com/deisymelo/k8s-microservice.git
+    targetRevision: main          # the branch ArgoCD tracks
+    path: chart                   # folder containing the Helm chart
+    helm:
+      valueFiles:
+        - values.yaml             # default values (swap for values-prod.yaml to test overrides)
+  # WHERE it gets deployed: this cluster, into the microservice namespace.
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: microservice
+  syncPolicy:
+    automated:
+      prune: true                 # delete resources removed from Git
+      selfHeal: true              # revert manual changes to match Git
+    syncOptions:
+      - CreateNamespace=true      # create the namespace if missing
