@@ -43,6 +43,7 @@ def root():
         "service": settings.APP_NAME,
         "version": settings.APP_VERSION,
         "environment": settings.APP_ENV,
+        "deployed_by": "ci-cd-pipeline",
     }
 
 
