@@ -3,7 +3,7 @@ replicaCount: 3
 
 image:
   repository: ghcr.io/deisymelo/k8s-microservice
-  tag: "a84a9a3"
+  tag: "7b0bc06"
   pullPolicy: IfNotPresent
 
 service:
