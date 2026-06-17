@@ -1,0 +1,11 @@
+replicaCount: 3
+env:
+  APP_ENV: "prod"
+  LOG_LEVEL: "warning"
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi

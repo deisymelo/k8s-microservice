@@ -1,0 +1,12 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+.git/
+.gitignore
+chart/
+argocd/
+.github/
+*.md
+.DS_Store
+.env

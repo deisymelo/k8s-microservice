@@ -1,0 +1,35 @@
+# Number of pod replicas to run by default.
+replicaCount: 2
+
+image:
+  repository: k8s-microservice
+  tag: "1.0.0"            # <-- this is what the CI pipeline will bump in Step 5
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80                # port the Service exposes inside the cluster
+  targetPort: 8000        # port the container listens on (our uvicorn port)
+
+# Application config -> injected into the container as environment variables.
+# This is the bridge between Helm and the app/config.py we wrote in Step 1.
+env:
+  APP_NAME: "k8s-microservice"
+  APP_VERSION: "1.0.0"
+  APP_ENV: "default"
+  LOG_LEVEL: "info"
+
+# Resource requests/limits — good practice; Kubernetes uses these to schedule
+# pods and prevent one container from starving the node.
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 250m
+    memory: 128Mi
+
+# Probe endpoints (the /health and /ready routes from Step 1).
+probes:
+  livenessPath: /health
+  readinessPath: /ready

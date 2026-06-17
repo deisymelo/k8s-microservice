@@ -1,0 +1,5 @@
+replicaCount: 1
+env:
+  APP_ENV: "dev"
+  APP_VERSION: "1.0.0-dev"
+  LOG_LEVEL: "debug"
